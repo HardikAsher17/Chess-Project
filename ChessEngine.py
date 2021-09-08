@@ -25,6 +25,46 @@ class GameState():
             self.moveLog.append(move)  # adding it to the list of previous moves
             self.whiteToMove = not self.whiteToMove  # swapping the player
 
+    def undoMove(self):
+        if len(self.moveLog) != 0:  # making sure there is atleast 1 move to undo
+            move = self.moveLog.pop()
+            self.board[move.startRow][move.startCol] = move.pieceMoved
+            self.board[move.endRow][move.endCol] = move.pieceCaptured
+            self.whiteToMove = not self.whiteToMove
+
+    # All moves considering checks
+    # For each move we check the by doing following:
+    # 1. make the move
+    # 2. generate all possible moves for opposite player
+    # 3. see if any of the moves attack your king
+    # 4. if king is safe it is valid, add it to list
+    # 5. return list of valid moves only
+    def getValidMoves(self):
+        return self.getAllPossibleMoves()  # for now we don't worry aboout checks
+
+    # All moves with considering checks
+    def getAllPossibleMoves(self):
+        moves = [Move((6, 3), (4, 3), self.board)]
+        for r in range(len(self.board)):
+            for c in range(len(self.board)):
+                turn = self.board[r][c][0]
+                if (turn == 'w' and self.whiteToMove) or (turn == 'b' and not self.whiteToMove):
+                    piece = self.board[r][c][1]
+                    if piece == 'p':
+                        self.getPawnMoves(r, c, moves)
+                    elif piece == 'R':
+                        self.getRookMoves(r, c, moves)
+
+        return moves
+
+    # Get all the moves for pawn located at r,c and add them to the list
+    def getPawnMoves(self, r, c, moves):
+        pass
+
+    # Get all the moves for rook located at r,c and add them to the list
+    def getRookMoves(self, r, c, moves):
+        pass
+
 
 class Move():
     ranksToRows = {
@@ -43,6 +83,14 @@ class Move():
         self.endCol = endSq[1]
         self.pieceMoved = board[self.startRow][self.startCol]
         self.pieceCaptured = board[self.endRow][self.endCol]
+        self.moveID = self.startRow * 1000 + self.startCol * 100 + self.endRow * 10 + self.endCol
+        print(self.moveID)
+
+    # overriding the equals method
+    def __eq__(self, other):
+        if isinstance(other, Move):
+            return self.moveID == other.moveID
+        return False
 
     def getChessNotation(self):
         return self.getRankFile(self.startRow, self.startCol) + self.getRankFile(self.endRow, self.endCol)
