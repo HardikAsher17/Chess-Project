@@ -15,7 +15,7 @@ class GameState():
             ["wp", "wp", "wp", "wp", "wp", "wp", "wp", "wp"],
             ["wR", "wN", "wB", "wQ", "wK", "wB", "wN", "wR"],
         ]
-
+        self.length = len(self.board)
         self.moveFunction = {
             'p': self.getPawnMoves,
             'R': self.getRookMoves,
@@ -55,8 +55,8 @@ class GameState():
     # All moves with considering checks
     def getAllPossibleMoves(self):
         moves = []
-        for r in range(len(self.board)):
-            for c in range(len(self.board)):
+        for r in range(self.length):
+            for c in range(self.length):
                 turn = self.board[r][c][0]
                 if (turn == 'w' and self.whiteToMove) or (turn == 'b' and not self.whiteToMove):
                     piece = self.board[r][c][1]
@@ -66,7 +66,7 @@ class GameState():
 
     # Get all the moves for pawn located at r,c and add them to the list
     def getPawnMoves(self, r, c, moves):
-        if self.whiteToMove:
+        if self.whiteToMove:  # white pawn's move
             if self.board[r - 1][c] == "--":  # single square pawn advance
                 moves.append(Move((r, c), (r - 1, c), self.board))
                 if r == 6 and self.board[r - 2][c] == "--":  # two square pawn advance
@@ -74,11 +74,11 @@ class GameState():
             if c - 1 >= 0:  # capturing black piece to the left
                 if self.board[r - 1][c - 1][0] == 'b':
                     moves.append(Move((r, c), (r - 1, c - 1), self.board))
-            if c + 1 < len(self.board[0]):  # capturing black piece to the right
+            if c + 1 < self.length:  # capturing black piece to the right
                 if self.board[r - 1][c + 1][0] == 'b':
                     moves.append(Move((r, c), (r - 1, c + 1), self.board))
 
-        else:
+        else:  # black pawn's move
             if self.board[r + 1][c] == "--":  # single square pawn advance
                 moves.append(Move((r, c), (r + 1, c), self.board))
                 if r == 1 and self.board[r + 2][c] == "--":  # two square pawn advance
@@ -86,29 +86,79 @@ class GameState():
             if c - 1 >= 0:  # capturing white piece to the left
                 if self.board[r + 1][c - 1][0] == 'w':
                     moves.append(Move((r, c), (r + 1, c - 1), self.board))
-            if c + 1 < len(self.board[0]):  # capturing white piece to the right
+            if c + 1 < self.length:  # capturing white piece to the right
                 if self.board[r + 1][c + 1][0] == 'w':
                     moves.append(Move((r, c), (r + 1, c + 1), self.board))
 
     # Get all the moves for rook located at r,c and add them to the list
     def getRookMoves(self, r, c, moves):
-        pass
+        directions = ((-1, 0), (0, -1), (1, 0), (0, 1))  # up, down, left, right
+        enemyColor = 'b' if self.whiteToMove else 'w'
+        for d in directions:
+            for i in range(1, self.length):
+                endRow = r + d[0] * i
+                endCol = c + d[1] * i
+                if 0 <= endRow < self.length and 0 <= endCol < self.length:  # inside the board
+                    endPiece = self.board[endRow][endCol]
+                    if endPiece == '--':  # empty space
+                        moves.append(Move((r, c), (endRow, endCol), self.board))
+                    elif endPiece[0] == enemyColor:  # enemy piece
+                        moves.append(Move((r, c), (endRow, endCol), self.board))
+                        break  # can't move ahead of a piece
+                    else:  # own piece
+                        break
+                else:  # outside the board
+                    break
 
     # Get all the moves for knight located at r,c and add them to the list
     def getKnightMoves(self, r, c, moves):
-        pass
+        knightMoves = ((-2, 1), (-2, -1), (2, 1), (2, -1), (-1, -2), (-1, 2), (1, -2), (1, 2))
+        allyColor = 'w' if self.whiteToMove else 'b'
+        for k in knightMoves:
+            endRow = r + k[0]
+            endCol = c + k[1]
+            if 0 <= endRow < self.length and 0 <= endCol < self.length:  # inside the board
+                endPiece = self.board[endRow][endCol]
+                if endPiece[0] != allyColor:  # either empty square of opposition's piece
+                    moves.append(Move((r, c), (endRow, endCol), self.board))
 
     # Get all the moves for bishop located at r,c and add them to the list
     def getBishopMoves(self, r, c, moves):
-        pass
+        directions = ((-1, -1), (1, -1), (1, 1), (-1, 1))  # top left, bottom left, bottom right, top right
+        enemyColor = 'b' if self.whiteToMove else 'w'
+        for d in directions:
+            for i in range(1, self.length):
+                endRow = r + d[0] * i
+                endCol = c + d[1] * i
+                if 0 <= endRow < self.length and 0 <= endCol < self.length:  # inside the board
+                    endPiece = self.board[endRow][endCol]
+                    if endPiece == '--':  # empty space
+                        moves.append(Move((r, c), (endRow, endCol), self.board))
+                    elif endPiece[0] == enemyColor:  # enemy piece
+                        moves.append(Move((r, c), (endRow, endCol), self.board))
+                        break  # can't move ahead of a piece
+                    else:  # own piece
+                        break
+                else:  # outside the board
+                    break
 
     # Get all the moves for queen located at r,c and add them to the list
     def getQueenMoves(self, r, c, moves):
-        pass
+        # queen moves like both bishop and rook
+        self.getRookMoves(r, c, moves)
+        self.getBishopMoves(r, c, moves)
 
     # Get all the moves for king located at r,c and add them to the list
     def getKingMoves(self, r, c, moves):
-        pass
+        kingMoves = ((-1, 0), (0, -1), (1, 0), (0, 1), (-1, -1), (1, -1), (1, 1), (-1, 1))
+        allyColor = 'w' if self.whiteToMove else 'b'
+        for i in range(self.length):
+            endRow = r + kingMoves[i][0]
+            endCol = c + kingMoves[i][1]
+            if 0 <= endRow < self.length and 0 <= endCol < self.length:  # inside the board
+                endPiece = self.board[endRow][endCol]
+                if endPiece[0] != allyColor:  # either empty square of opposition's piece
+                    moves.append(Move((r, c), (endRow, endCol), self.board))
 
 
 class Move():
